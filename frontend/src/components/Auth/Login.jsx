@@ -1,20 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { APP_NAME } from '../../config/constants';
+import { toast } from 'react-toastify';
 import './Auth.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -24,17 +23,24 @@ const Login = () => {
         if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
           navigate('/change-password', { state: { username } });
         } else if (result.nextStep?.signInStep === 'DONE') {
-          console.log('Navigating to dashboard...');
+          toast.success('Login successful!');
           setTimeout(() => navigate('/dashboard'), 100);
         } else {
-          console.log('Navigating to dashboard (fallback)...');
           navigate('/dashboard');
         }
       } else {
-        setError(result.error || 'Login failed. Please try again.');
+        // Handle "already signed in" error by signing out first
+        if (result.error?.toLowerCase().includes('already') || 
+            result.error?.toLowerCase().includes('signed in')) {
+          toast.info('Clearing previous session...');
+          await logout();
+          toast.info('Session cleared. Please try logging in again.');
+        } else {
+          toast.error(result.error || 'Login failed. Please try again.');
+        }
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,24 +73,6 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && (
-            <div className="error-message">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {error}
-            </div>
-          )}
-
           <div className="form-group">
             <label htmlFor="username" className="form-label">
               Username

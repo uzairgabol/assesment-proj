@@ -10,6 +10,8 @@ import Login from './components/Auth/Login';
 import ChangePassword from './components/Auth/ChangePassword';
 import Dashboard from './pages/Dashboard';
 import PatientNotes from './pages/PatientNotes';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 // Import Amplify config
@@ -61,6 +63,18 @@ function App() {
   return (
     <AuthProvider>
       <AppRoutes />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </AuthProvider>
   );
 }

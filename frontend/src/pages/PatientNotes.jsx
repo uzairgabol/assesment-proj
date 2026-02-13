@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Navbar from '../components/Layout/Navbar';
 import NotesList from '../components/Notes/NotesList';
 import NoteDetail from '../components/Notes/NoteDetail';
@@ -15,17 +16,11 @@ const PatientNotes = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState('');
 
-  useEffect(() => {
-    loadNotes();
-  }, [patientId]);
-
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     setLoading(true);
-    setError('');
     try {
       const params = {};
       if (searchQuery) params.search = searchQuery;
@@ -34,12 +29,18 @@ const PatientNotes = () => {
       const data = await notesApi.listNotes(patientId, params);
       setNotes(data.notes || []);
     } catch (err) {
-      setError('Failed to load notes. Please try again.');
+      if (!err.isHandled) {
+        toast.error('Failed to load notes. Please try again.');
+      }
       console.error('Error loading notes:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [patientId, searchQuery, filterTag]);
+
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
 
   const handleCreateNote = async (noteData) => {
     try {
@@ -47,8 +48,12 @@ const PatientNotes = () => {
       setNotes([newNote, ...notes]);
       setIsCreating(false);
       setSelectedNote(newNote);
+      toast.success('Note created successfully!');
     } catch (err) {
       console.error('Error creating note:', err);
+      if (!err.isHandled) {
+        toast.error('Failed to create note. Please try again.');
+      }
       throw err;
     }
   };
@@ -63,8 +68,12 @@ const PatientNotes = () => {
       setNotes(notes.map((n) => (n.noteId === updated.noteId ? updated : n)));
       setSelectedNote(updated);
       setIsEditing(false);
+      toast.success('Note updated successfully!');
     } catch (err) {
       console.error('Error updating note:', err);
+      if (!err.isHandled) {
+        toast.error('Failed to update note. Please try again.');
+      }
       throw err;
     }
   };
@@ -78,15 +87,30 @@ const PatientNotes = () => {
       await notesApi.deleteNote(patientId, noteId);
       setNotes(notes.filter((n) => n.noteId !== noteId));
       setSelectedNote(null);
+      toast.success('Note deleted successfully!');
     } catch (err) {
       console.error('Error deleting note:', err);
-      alert('Failed to delete note. Please try again.');
+      if (!err.isHandled) {
+        toast.error('Failed to delete note. Please try again.');
+      }
     }
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
     loadNotes();
+  };
+
+  const handleSelectNote = (note) => {
+    setSelectedNote(note);
+    setIsCreating(false);
+    setIsEditing(false);
+  };
+
+  const handleNewNote = () => {
+    setIsCreating(true);
+    setIsEditing(false);
+    setSelectedNote(null);
   };
 
   return (
@@ -120,7 +144,7 @@ const PatientNotes = () => {
               <p className="notes-subtitle">Patient ID: {patientId}</p>
             </div>
             <button
-              onClick={() => setIsCreating(true)}
+              onClick={handleNewNote}
               className="btn btn-primary"
             >
               <svg
@@ -191,9 +215,8 @@ const PatientNotes = () => {
               <NotesList
                 notes={notes}
                 selectedNote={selectedNote}
-                onSelectNote={setSelectedNote}
+                onSelectNote={handleSelectNote}
                 loading={loading}
-                error={error}
               />
             </div>
 

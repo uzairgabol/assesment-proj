@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const result = await authService.login(username, password);
     if (result.success && result.nextStep?.signInStep === 'DONE') {
       // User successfully signed in without additional challenges
-      const authResult = await checkAuth();
+      await checkAuth();
       return { ...result, userUpdated: true };
     }
     return result;

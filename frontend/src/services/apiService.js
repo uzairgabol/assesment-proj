@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/constants';
 import { authService } from './authService';
 
@@ -15,6 +16,8 @@ apiClient.interceptors.request.use(
     const token = await authService.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('No auth token available for API request');
     }
     return config;
   },
@@ -24,10 +27,36 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // Mark error as handled to prevent duplicate toasts in components
+    error.isHandled = false;
+    
     if (error.response?.status === 401) {
-      window.location.href = '/login';
+      toast.error('Session expired. Please login again.');
+      error.isHandled = true;
+      
+      // Sign out from Cognito before redirecting to clear the session
+      try {
+        await authService.logout();
+      } catch (logoutError) {
+        console.error('Error during auto-logout:', logoutError);
+      }
+      
+      // Redirect after a short delay to allow toast to be seen
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } else if (error.response?.status >= 500) {
+      toast.error('Server error. Please try again later.');
+      error.isHandled = true;
+    } else if (error.response?.status === 403) {
+      toast.error('Access denied. You do not have permission.');
+      error.isHandled = true;
+    } else if (error.message === 'Network Error') {
+      toast.error('Network error. Please check your connection.');
+      error.isHandled = true;
     }
+    
     return Promise.reject(error);
   }
 );

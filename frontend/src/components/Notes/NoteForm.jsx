@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { NOTE_TAGS } from '../../config/constants';
 import { notesApi } from '../../services/apiService';
 import './Notes.css';
@@ -10,7 +11,6 @@ const NoteForm = ({ note, onSubmit, onCancel }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
   const isEditing = !!note;
 
@@ -27,17 +27,15 @@ const NoteForm = ({ note, onSubmit, onCancel }) => {
     if (selectedFile) {
       // Validate file size (max 10MB)
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError('File size must be less than 10MB');
+        toast.error('File size must be less than 10MB');
         return;
       }
       setFile(selectedFile);
-      setError('');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setSaving(true);
 
     try {
@@ -73,7 +71,10 @@ const NoteForm = ({ note, onSubmit, onCancel }) => {
 
       await onSubmit(noteData);
     } catch (err) {
-      setError(err.message || 'Failed to save note. Please try again.');
+      // Only show toast if error wasn't already handled
+      if (!err.isHandled && err.message) {
+        toast.error(err.message);
+      }
       setSaving(false);
     }
   };
@@ -87,19 +88,6 @@ const NoteForm = ({ note, onSubmit, onCancel }) => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {error && (
-          <div className="form-error">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            {error}
-          </div>
-        )}
-
         <div className="form-group">
           <label htmlFor="content" className="form-label required">
             Note Content

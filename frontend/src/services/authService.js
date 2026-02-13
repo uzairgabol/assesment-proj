@@ -67,10 +67,19 @@ export const authService = {
     }
   },
 
-  async getToken() {
+  async getToken(forceRefresh = false) {
     try {
-      const session = await fetchAuthSession();
-      return session.tokens?.idToken?.toString();
+      const session = await fetchAuthSession({ forceRefresh });
+      
+      // Use idToken for API authorization (matching Postman configuration)
+      const token = session.tokens?.idToken?.toString();
+      
+      if (!token) {
+        console.error('No ID token found in session');
+        return null;
+      }
+      
+      return token;
     } catch (error) {
       console.error('Error getting token:', error);
       return null;
