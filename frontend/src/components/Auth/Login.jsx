@@ -10,17 +10,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, user, logout } = useAuth();
-
-  // Clear any existing session on mount
-  useEffect(() => {
-    const clearSession = async () => {
-      if (user) {
-        await logout();
-      }
-    };
-    clearSession();
-  }, []);
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +23,11 @@ const Login = () => {
       if (result.success) {
         if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
           navigate('/change-password', { state: { username } });
+        } else if (result.nextStep?.signInStep === 'DONE') {
+          console.log('Navigating to dashboard...');
+          setTimeout(() => navigate('/dashboard'), 100);
         } else {
+          console.log('Navigating to dashboard (fallback)...');
           navigate('/dashboard');
         }
       } else {

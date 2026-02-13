@@ -108,7 +108,7 @@ const Navbar = () => {
                       {user?.username || 'User'}
                     </p>
                     <p className="dropdown-user-email">
-                      {user?.attributes?.email || 'user@example.com'}
+                      {user?.attributes?.email || 'User'}
                     </p>
                   </div>
                   <div className="dropdown-divider" />

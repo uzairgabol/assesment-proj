@@ -17,10 +17,17 @@ export const AuthProvider = ({ children }) => {
       setUser(result.user);
     }
     setLoading(false);
+    return result;
   };
 
   const login = async (username, password) => {
-    return await authService.login(username, password);
+    const result = await authService.login(username, password);
+    if (result.success && result.nextStep?.signInStep === 'DONE') {
+      // User successfully signed in without additional challenges
+      const authResult = await checkAuth();
+      return { ...result, userUpdated: true };
+    }
+    return result;
   };
 
   const logout = async () => {
@@ -32,7 +39,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const completeNewPassword = async (newPassword) => {
-    return await authService.completeNewPassword(newPassword);
+    const result = await authService.completeNewPassword(newPassword);
+    if (result.success) {
+      // User successfully completed password change
+      await checkAuth();
+    }
+    return result;
   };
 
   return (
